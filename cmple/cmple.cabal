@@ -1,0 +1,99 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           cmple
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/cmple#readme>
+homepage:       https://github.com/nikos-alexandris/cmple#readme
+bug-reports:    https://github.com/nikos-alexandris/cmple/issues
+author:         Nikos Alexandris
+maintainer:     nikos-alexandris@protonmail.com
+copyright:      2023 Nikos Alexandris
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/nikos-alexandris/cmple
+
+library
+  exposed-modules:
+      ArgParser
+      Config
+      Mode
+  other-modules:
+      Paths_cmple
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      base >=4.7 && <5
+    , bytestring
+    , deepseq
+    , dir-traverse
+    , directory
+    , http-client
+    , lens
+    , optparse-applicative
+    , process
+    , text
+    , toml-reader
+    , wreq
+    , zip
+  default-language: Haskell2010
+
+executable cmple
+  main-is: Main.hs
+  other-modules:
+      Paths_cmple
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , bytestring
+    , cmple
+    , deepseq
+    , dir-traverse
+    , directory
+    , http-client
+    , lens
+    , optparse-applicative
+    , process
+    , text
+    , toml-reader
+    , wreq
+    , zip
+  default-language: Haskell2010
+
+test-suite cmple-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_cmple
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , bytestring
+    , cmple
+    , deepseq
+    , dir-traverse
+    , directory
+    , http-client
+    , lens
+    , optparse-applicative
+    , process
+    , text
+    , toml-reader
+    , wreq
+    , zip
+  default-language: Haskell2010
