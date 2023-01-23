@@ -1,1 +1,1 @@
-# cmple - A minimal C project and package manager
+# cmple - A minimal project and package manager for C
