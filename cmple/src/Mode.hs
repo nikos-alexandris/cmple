@@ -1,12 +1,15 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wall #-}
 
 module Mode (Mode (..), NewProjectInfo (..), execMode) where
 
 import Codec.Archive.Zip (CompressionMethod (Deflate), createArchive, loadEntry, mkEntrySelector, packDirRecur, unpackInto, withArchive)
 import Config (Config (..), LibraryType (..), ProjectType (..), defaultConfig, parseConfig)
+import Control.Conditional (ifM, unlessM, whenM)
 import Control.DeepSeq (($!!))
 import Control.Lens ((^.))
-import Control.Monad (unless, when)
+import Control.Monad (unless)
 import qualified Data.ByteString.Lazy as LBS
 import Data.List (isSuffixOf)
 import Data.Text (pack)
@@ -75,8 +78,7 @@ run State{stateConfig = Config{configProjectType = LibraryProject _}} = error "C
 run State{stateConfig = Config{configProjectName = projectName}} = do
   build
   putStrLn "Running..."
-  ec <- system $ "target/" ++ projectName
-  case ec of
+  system ("target/" ++ projectName) >>= \case
     ExitSuccess -> return ()
     ExitFailure c -> error $ "Run failed with exit code " ++ show c
   return ()
@@ -91,8 +93,7 @@ publish State{stateConfig = Config{configUser = user, configProjectName = projec
  where
   compress = do
     putStrLn "- Zipping..."
-    ex <- doesDirectoryExist zipName
-    when ex $ removeFile zipName
+    whenM (doesFileExist zipName) (removeFile zipName)
 
     createArchive zipName $ do
       buildEntrySelector <- mkEntrySelector "build.toml"
@@ -119,10 +120,8 @@ publish State{stateConfig = Config{configUser = user, configProjectName = projec
 reload :: IO ()
 reload = do
   putStrLn "Reloading..."
-  ex <- doesDirectoryExist "target"
-  unless ex $ createDirectory "target"
-  ec <- system "cmake -B target -S ."
-  case ec of
+  unlessM (doesDirectoryExist "target") (createDirectory "target")
+  system "cmake -B target -S ." >>= \case
     ExitSuccess -> return ()
     ExitFailure c -> error $ "Reload failed with exit code " ++ show c
   return ()
@@ -131,8 +130,7 @@ build :: IO ()
 build = do
   reload
   putStrLn "Building..."
-  ec <- system "cmake --build target"
-  case ec of
+  system "cmake --build target" >>= \case
     ExitSuccess -> return ()
     ExitFailure c -> error $ "Build failed with exit code " ++ show c
   return ()
@@ -147,21 +145,18 @@ getDependencies Config{configDependencies = deps} = do
     let projDir = "depends/" ++ proj ++ "/"
     let zipPath = "depends/" ++ proj ++ ".zip"
     putStrLn $ "- Processing dependency " ++ proj
-    ex <- doesDirectoryExist projDir
-    if ex
-      then putStrLn "- Already downloaded, skipping..."
-      else do
-        r <- post "https://6mybbf.deta.dev/fetch" ["project" := proj]
-        createDirectory projDir
-        LBS.writeFile zipPath (r ^. responseBody)
-        putStrLn "- Unzipping..."
-        withArchive zipPath (unpackInto projDir)
-        putStrLn "- Removing zip file..."
-        removeFile zipPath
-        buildDependency proj
-        putStrLn "- Symlinking public headers..."
-        createDirectoryLink ("../" ++ projDir ++ "header/public") ("lib/" ++ proj)
-        return ()
+    ifM (doesDirectoryExist projDir) (putStrLn "- Already downloaded, skipping...") $ do
+      r <- post "https://6mybbf.deta.dev/fetch" ["project" := proj]
+      createDirectory projDir
+      LBS.writeFile zipPath (r ^. responseBody)
+      putStrLn "- Unzipping..."
+      withArchive zipPath (unpackInto projDir)
+      putStrLn "- Removing zip file..."
+      removeFile zipPath
+      buildDependency proj
+      putStrLn "- Symlinking public headers..."
+      createDirectoryLink ("../" ++ projDir ++ "header/public") ("lib/" ++ proj)
+      return ()
 
 buildDependency :: String -> IO ()
 buildDependency dep = do
@@ -180,14 +175,14 @@ getIncludeFiles = do
 
 updateCMakeLists :: State -> IO ()
 updateCMakeLists state = do
-  cmlExists <- doesFileExist "CMakeLists.txt"
-  if cmlExists
-    then do
-      previous <- readFile "CMakeLists.txt"
-      let next = makeCMakeLists (Just previous) state
-      writeFile "CMakeLists.txt" $!! next
-    else do
-      writeFile "CMakeLists.txt" (makeCMakeLists Nothing state)
+  ifM
+    (doesFileExist "CMakeLists.txt")
+    ( do
+        previous <- readFile "CMakeLists.txt"
+        let next = makeCMakeLists (Just previous) state
+        writeFile "CMakeLists.txt" $!! next
+    )
+    (writeFile "CMakeLists.txt" (makeCMakeLists Nothing state))
 
 makeCMakeLists :: Maybe String -> State -> String
 makeCMakeLists

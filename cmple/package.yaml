@@ -33,6 +33,7 @@ dependencies:
 - bytestring
 - text
 - lens
+- cond
 
 ghc-options:
 - -Wall

@@ -36,6 +36,7 @@ library
   build-depends:
       base >=4.7 && <5
     , bytestring
+    , cond
     , deepseq
     , dir-traverse
     , directory
@@ -60,6 +61,7 @@ executable cmple
       base >=4.7 && <5
     , bytestring
     , cmple
+    , cond
     , deepseq
     , dir-traverse
     , directory
@@ -85,6 +87,7 @@ test-suite cmple-test
       base >=4.7 && <5
     , bytestring
     , cmple
+    , cond
     , deepseq
     , dir-traverse
     , directory
